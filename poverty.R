@@ -77,7 +77,7 @@ povertyData[is.na(povertyData)] <- 0
 colnames(povertyData)[colSums(is.na(povertyData)) > 0]
 ############################Feature Engineering###################################
 #Removing all columns which are squared
-povertyData <- povertyData[,-(132:140),drop=FALSE]
+povertyData <- povertyData[,-(134:140),drop=FALSE]
 #povertyData <- povertyData[ , -which(names(povertyData) %in% c("female"))]
 
 
@@ -116,8 +116,8 @@ povertyData <- povertyData %>%
   #select(-r4t1) %>% # persons younger than 12 years of age
   #select(-r4t2) %>% # persons 12 years of age and older
   #select(-agesq) %>% # Age squared
-  #select(-Id) %>% # removing id
-  select(-idhogar)
+  select(-Id) #%>% # removing id
+  #select(-idhogar)
 
 # Check if the dataset has any non numeric column(s)
 povertyData %>%
@@ -129,8 +129,18 @@ povertyData[,c("dependency","edjefe","edjefa")] <- povertyData %>%
   mutate_all(funs(ifelse(. == "yes",1,ifelse(. == "no",0,.)))) %>% 
   mutate_all(as.numeric)
 
-train_labels <- as.numeric(povertyData$Target) - 1
-train_data <- as.matrix(povertyData[,-125])
+
+row<-nrow(povertyData)
+set.seed(12345)
+trainindex <- sample(row, row*.7, replace=FALSE)
+training <- povertyData[trainindex, ]
+validation <- povertyData[-trainindex, ]
+
+
+train_labels <- as.numeric(training$Target) - 1
+test_labels<-as.numeric(validation$Target)-1
+train_data <- as.matrix(training[,-134])
+test_data <- as.matrix(validation[,-134])
 dtrain <- xgb.DMatrix(data = train_data, label= train_labels)
 dtest <- xgb.DMatrix(data = test_data, label= test_labels)
 
@@ -158,11 +168,12 @@ xgb <- xgboost(data = dtrain,
 # Get information on how important each feature is and plot it!
 xgb.importance(names(train_data), model = xgb) %>% 
   xgb.plot.importance(top_n = 15)
-
+pred<-predict(xgb,test_data)
+accuracy(pred,test_labels)
 #colnames(povertyData)
-row<-nrow(povertyData)
-set.seed(12345)
-trainindex <- sample(row, row*.7, replace=FALSE)
-training <- povertyData[trainindex, ]
-validation <- povertyData[-trainindex, ]
-
+#row<-nrow(povertyData)
+#set.seed(12345)
+#trainindex <- sample(row, row*.7, replace=FALSE)
+#training <- povertyData[trainindex, ]
+#validation <- povertyData[-trainindex, ]
+#training
