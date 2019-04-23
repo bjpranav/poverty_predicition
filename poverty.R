@@ -2,6 +2,7 @@ library(randomForest)
 library(dplyr)
 library(tidyverse)
 library(xgboost)
+
 povertyData<-read.csv('D:\\bin\\OR568\\Project\\costa-rican-household-poverty-prediction\\train.csv')
 ###########################################################################################
 colnames(povertyData)[colSums(is.na(povertyData)) > 0]
@@ -117,7 +118,7 @@ povertyData <- povertyData %>%
   #select(-r4t2) %>% # persons 12 years of age and older
   #select(-agesq) %>% # Age squared
   select(-Id) #%>% # removing id
-  #select(-idhogar)
+  select(-idhogar)
 
 # Check if the dataset has any non numeric column(s)
 povertyData %>%
@@ -169,7 +170,35 @@ xgb <- xgboost(data = dtrain,
 xgb.importance(names(train_data), model = xgb) %>% 
   xgb.plot.importance(top_n = 15)
 pred<-predict(xgb,test_data)
-accuracy(pred,test_labels)
+cm=table(pred,test_labels)
+
+diag = diag(cm)
+colsums = apply(cm, 2, sum)
+rowsums = apply(cm, 1, sum)
+precision = diag / colsums 
+recall = diag / rowsums
+f1 = 2 * precision * recall / (precision + recall) 
+macroF1 = mean(f1)
+
+
+f1_score <- function(predicted, expected, positive.class="1") {
+  predicted <- factor(as.character(predicted), levels=unique(as.character(expected)))
+  expected  <- as.factor(expected)
+  cm = as.matrix(table(expected, predicted))
+  
+  precision <- diag(cm) / colSums(cm)
+  recall <- diag(cm) / rowSums(cm)
+  f1 <-  ifelse(precision + recall == 0, 0, 2 * precision * recall / (precision + recall))
+  
+  #Assuming that F1 is zero when it's not possible compute it
+  f1[is.na(f1)] <- 0
+  
+  #Binary F1 or Multi-class macro-averaged F1
+  ifelse(nlevels(expected) == 2, f1[positive.class], mean(f1))
+}
+
+f1_score(pred,test_labels)
+
 #colnames(povertyData)
 #row<-nrow(povertyData)
 #set.seed(12345)
