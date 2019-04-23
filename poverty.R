@@ -53,7 +53,7 @@ varImpPlot(rfModel,main="Important Predictors")
 #rfPredicted=predict(rfModel,validation,type="response")
 
 #table(rfPredicted,validation$Target)
-###############################T  reating Null values####################################
+###############################Treating Null values####################################
 ######House -Rent#####
 povertyDataV2Na <- povertyData[rowSums(is.na(povertyData['v2a1'])) > 0,]
 
@@ -117,7 +117,7 @@ povertyData <- povertyData %>%
   #select(-r4t1) %>% # persons younger than 12 years of age
   #select(-r4t2) %>% # persons 12 years of age and older
   #select(-agesq) %>% # Age squared
-  select(-Id) #%>% # removing id
+  select(-Id) %>% # removing id
   select(-idhogar)
 
 # Check if the dataset has any non numeric column(s)
